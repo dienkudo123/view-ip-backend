@@ -32,20 +32,26 @@ const IPLog = mongoose.model("IPLog", {
 // 3. API lưu IP + vị trí
 app.post("/log-ip", async (req, res) => {
     const { ip } = req.body;
+
     try {
-        const response = await fetch(`https://ipapi.co/${ip}/json/`);
+        const response = await fetch(`https://ipwho.is/${ip}`);
         const location = await response.json();
+
+        if (!location.success) {
+            throw new Error("Không thể lấy thông tin vị trí từ IP");
+        }
 
         const logData = {
             ip,
             location: {
                 city: location.city,
                 region: location.region,
-                country: location.country_name,
+                country: location.country,
                 latitude: location.latitude,
                 longitude: location.longitude,
-                org: location.org,
+                org: location.connection?.isp,
             },
+            time: new Date(),
         };
 
         await IPLog.create(logData);
@@ -53,7 +59,7 @@ app.post("/log-ip", async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error("❌ Lỗi khi lưu IP:", err.message);
-        res.status(500).json({ success: false });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
