@@ -36,6 +36,7 @@ app.post("/log-ip", async (req, res) => {
 // 4. API test lấy IP
 app.get("/get-ip", (req, res) => {
     const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
+    console.log("sadsad",ip);
     res.json({ ip });
 });
 
