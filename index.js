@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const fetch = require("node-fetch");
 
 const app = express();
 const PORT = 3001;
@@ -17,26 +18,48 @@ mongoose
 // 2. Định nghĩa schema
 const IPLog = mongoose.model("IPLog", {
     ip: String,
+    location: {
+        city: String,
+        region: String,
+        country: String,
+        latitude: Number,
+        longitude: Number,
+        org: String,
+    },
     time: { type: Date, default: Date.now },
 });
 
-// 3. API log IP
+// 3. API lưu IP + vị trí
 app.post("/log-ip", async (req, res) => {
     const { ip } = req.body;
     try {
-        await IPLog.create({ ip });
-        console.log("📩 Lưu IP:", ip);
+        const response = await fetch(`https://ipapi.co/${ip}/json/`);
+        const location = await response.json();
+
+        const logData = {
+            ip,
+            location: {
+                city: location.city,
+                region: location.region,
+                country: location.country_name,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                org: location.org,
+            },
+        };
+
+        await IPLog.create(logData);
+        console.log("📩 Đã lưu IP + vị trí:", logData);
         res.json({ success: true });
     } catch (err) {
-        console.error("❌ Lỗi khi lưu IP:", err);
+        console.error("❌ Lỗi khi lưu IP:", err.message);
         res.status(500).json({ success: false });
     }
 });
 
-// 4. API test lấy IP
+// 4. API lấy IP người dùng
 app.get("/get-ip", (req, res) => {
     const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
-    console.log("sadsad",ip);
     res.json({ ip });
 });
 
