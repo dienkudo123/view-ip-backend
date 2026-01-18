@@ -29,22 +29,25 @@ const IPLog = mongoose.model("IPLog", {
 app.post("/log-ip", async (req, res) => {
     const { ip } = req.body;
     
-    // Xử lý thông tin thiết bị
     const parser = new UAParser(req.headers['user-agent']);
     const result = parser.getResult();
+
+    // Lấy thêm vendor (hãng) và model (tên máy)
     const deviceInfo = {
-        type: result.device.type || 'desktop',
+        type: result.device.type || 'desktop', 
+        vendor: result.device.vendor || 'Unknown', // Ví dụ: Apple, Samsung
+        model: result.device.model || 'Unknown',   // Ví dụ: iPhone, SM-G991B
         os: result.os.name,
-        browser: result.browser.name,
-        fullUA: req.headers['user-agent']
+        browser: result.browser.name
     };
 
     try {
         await IPLog.create({ ip, deviceInfo });
-        console.log(`📩 Lưu IP: ${ip} | Device: ${deviceInfo.type}`);
+        // Log ra để bạn xem nó bắt được gì
+        console.log(`📩 Máy: ${deviceInfo.vendor} ${deviceInfo.model} | OS: ${deviceInfo.os}`);
         res.json({ success: true, device: deviceInfo });
     } catch (err) {
-        console.error("❌ Lỗi khi lưu IP:", err);
+        console.error("❌ Lỗi:", err);
         res.status(500).json({ success: false });
     }
 });
